@@ -5,6 +5,9 @@ import iTicket.Autenticacion.auth.dto.LoginResponseDTO;
 import iTicket.Autenticacion.auth.entity.UsuariosAuthEntity;
 import iTicket.Autenticacion.auth.repository.UsuariosAuthRepository;
 import iTicket.Autenticacion.utils.PasswordUtil;
+import iTicket.Autenticacion.exception.OperacionInvalidaException;
+import iTicket.Autenticacion.exception.RecursoNoEncontradoException;
+import iTicket.Autenticacion.utils.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,20 +26,20 @@ public class AuthService {
         Optional<UsuariosAuthEntity> usuarioOpcional = repo.findByCorreo(dto.getCorreo());
 
         if (usuarioOpcional.isEmpty()) {
-            log.warn("Intento de login con correo no registrado: " + dto.getCorreo());
-            return null;
+            throw new RecursoNoEncontradoException(ErrorCode.WAUT003, "Correo no registrado: " + dto.getCorreo());
+            
         }
 
         UsuariosAuthEntity usuario = usuarioOpcional.get();
 
         if (!"T".equalsIgnoreCase(usuario.getEstado())) {
-            log.warn("Intento de login de usuario inactivo: " + dto.getCorreo());
-            return null;
+            throw new OperacionInvalidaException(ErrorCode.WAUT002, "Usuario inactivo: " + dto.getCorreo());
+            
         }
 
         if (!passwordUtil.coincidence(dto.getClave(), usuario.getClave())) {
-            log.warn("Contraseña incorrecta para: " + dto.getCorreo());
-            return null;
+            throw new OperacionInvalidaException(ErrorCode.WAUT001, "Contraseña incorrecta");
+            
         }
 
         log.info("Login exitoso: " + dto.getCorreo());
